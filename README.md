@@ -10,4 +10,6 @@ This is an Amazon Product Chatbot using Retrieval-Augmented Generation (RAG). Th
 
 The app is designed to process user queries, retrieve relevant product data, and generate concise, informative responses.
 
-To run the app: Streamlit run app.py
+To run the app - Streamlit run app.py
+
+![Watch the Demo](https://github.com/Arnabdas11/Amazon-product-chatbot---RAG/blob/main/app_demo.mov)
