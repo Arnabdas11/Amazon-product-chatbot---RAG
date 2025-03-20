@@ -12,4 +12,4 @@ The app is designed to process user queries, retrieve relevant product data, and
 
 To run the app - Streamlit run app.py
 
-[![Watch the Demo](https://youtu.be/LQAXFASgg-I/0.jpg)](https://youtu.be/LQAXFASgg-I)
+[![Watch the Demo](https://github.com/Arnabdas11/Amazon-product-chatbot---RAG/blob/main/IMG_0377.PNG)](https://youtu.be/LQAXFASgg-I)
