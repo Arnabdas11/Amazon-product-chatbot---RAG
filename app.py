@@ -7,7 +7,8 @@ from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
-
+from langchain.chains import LLMChain
+from langchain.memory import ConversationBufferMemory
 
 with open("config.json", "r") as f:
     config = json.load(f)
@@ -49,29 +50,42 @@ def search_product(user_query, top_k=1):
     else:
         return ["No matching product found."]
 
-system_prompt = """
-For the given query by the user {user_query}, the response is: {response}.
-Summarize the answer in a few sentences. Be concise and informative.
-"""
+def generate_llm_response():
+    system_prompt = """
+    You are an amazon shopping assistant helping users to decide on the products.
+    Relevant context fetched from database : {context}
+    Previous conversation: {chat_history}
+    For the given query by the user {user_input}.
+    Summarize the answer in a few sentences. Be concise and informative.
+    """
+    prompt_template = ChatPromptTemplate.from_template(system_prompt)
+    llm = ChatOpenAI(temperature=0.0, openai_api_key=os.environ["OPENAI_API_KEY"])
+    
 
-prompt_template = ChatPromptTemplate.from_template(system_prompt)
+    chain = LLMChain(
+        llm=llm, 
+        prompt=prompt_template, 
+        output_key="answer"
+    )
+    
+    return chain
 
-
-llm = ChatOpenAI(temperature=0.0, openai_api_key=os.environ["OPENAI_API_KEY"])
-
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
 
 if __name__ == "__main__":
     st.set_page_config(page_title="Amazon Product Chatbot - RAG")
     st.title("Amazon Product Chatbot - RAG")
-
+    chain = generate_llm_response()
+    
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
+    if "context" not in st.session_state:
+        st.session_state.context = None 
 
-    user_input = st.text_input("Please enter your query")
+    user_input = st.text_input("Please enter your query", key='input')
 
     if user_input.strip():  
+        if st.session_state.context is None:
+            st.session_state.context = search_product(user_query=user_input)
         st.session_state.chat_history.append({"role": "user", "content": user_input.strip()})
 
         formatted_history = []
@@ -81,14 +95,18 @@ if __name__ == "__main__":
             "content": chat["content"]
             })
 
-        response = llm(formatted_history)
-        st.write(response.content)
+        response = chain.invoke({
+            "user_input": user_input, 
+            "chat_history": formatted_history,
+            "context": st.session_state.context
+        })
+        
+        st.write(response["answer"])
 
-        st.session_state.chat_history.append({"role": "assistant", "content": response.content})
+        st.session_state.chat_history.append({"role": "assistant", "content": response["answer"]})
 
         st.write("="*70)
         st.markdown("**Chat History:**")
-
 
     for chat in st.session_state.chat_history:
         if chat["role"] == "user":
